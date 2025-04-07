@@ -1,0 +1,14 @@
+<% content_for :title, "New interview" %>
+
+<div class="md:w-2/3 w-full">
+  <h1 class="font-bold text-4xl">Start Interview</h1>
+
+  <%= form_with model: @interview, local: true do |form| %>
+    <div>
+      <%= form.label :job_id, "Select Job" %><br>
+      <%= form.collection_select :job_id, Job.all, :id, :title %>
+    </div>
+    <br>
+    <%= form.submit "Start Interview", class: "bg-blue-500 text-white px-4 py-2 rounded" %>
+  <% end %>
+</div>

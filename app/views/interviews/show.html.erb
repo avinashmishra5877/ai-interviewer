@@ -1,0 +1,23 @@
+<% content_for :title, "Showing interview" %>
+
+<div class="md:w-2/3 w-full">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-md inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <h1 class="text-2xl font-bold mb-4">Evaluation Summary</h1>
+
+  <% if @interview.evaluation_summary.present? %>
+    <div class="p-6 bg-white rounded shadow">
+      <% @interview.evaluation_summary.split("\n").each do |line| %>
+        <p class="mb-2"><%= simple_format(line) %></p>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-gray-600">No evaluation available yet.</p>
+  <% end %>
+
+  <hr class="my-6">
+
+  <%= link_to "Take Interview Again", take_interview_path(@interview), class: "text-blue-600 underline" %>
+</div>

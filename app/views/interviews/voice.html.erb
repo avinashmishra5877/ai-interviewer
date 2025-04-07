@@ -1,0 +1,132 @@
+<% content_for :title, "Showing interview" %>
+
+<div class="md:w-2/3 w-full">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-md inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <h1 class="text-2xl font-bold mb-6">Voice Interview</h1>
+
+  <div id="bot" class="mb-4 text-xl text-blue-600 font-mono">Bot: Ready to begin</div>
+  <div id="status" class="mb-4 text-gray-500 text-sm"></div>
+
+  <button id="start" class="bg-green-600 text-white px-4 py-2 rounded">Start Interview</button>
+
+  <audio id="beep" src="/beep.mp3" preload="auto"></audio>
+
+  <script>
+    const questions = <%= raw @questions.map(&:content).to_json %>
+    const interviewId = <%= @interview.id %>
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content
+
+    let currentIndex = 0
+    let recorder, stream, chunks = []
+    let silenceTimer = null
+    const maxSilence = 3000 // 3 seconds
+
+    const bot = document.getElementById("bot")
+    const status = document.getElementById("status")
+    const startBtn = document.getElementById("start")
+
+    const synth = window.speechSynthesis
+
+    async function startRecording() {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      recorder = new MediaRecorder(stream)
+      chunks = []
+
+      recorder.ondataavailable = e => chunks.push(e.data)
+      recorder.onstop = uploadRecording
+      recorder.start()
+
+      const audioCtx = new AudioContext()
+      const source = audioCtx.createMediaStreamSource(stream)
+      const analyser = audioCtx.createAnalyser()
+      source.connect(analyser)
+
+      const data = new Uint8Array(analyser.fftSize)
+
+      const checkSilence = () => {
+        analyser.getByteTimeDomainData(data)
+        const avg = data.reduce((a, b) => a + Math.abs(b - 128), 0) / data.length
+
+        if (avg > 5) {
+          // you're speaking
+          if (silenceTimer) {
+            clearTimeout(silenceTimer)
+            silenceTimer = null
+          }
+        } else {
+          // you're silent
+          if (!silenceTimer) {
+            silenceTimer = setTimeout(() => {
+              stopRecording()
+              audioCtx.close()
+            }, maxSilence)
+          }
+        }
+
+        requestAnimationFrame(checkSilence)
+      }
+
+      checkSilence()
+    }
+
+    function stopRecording() {
+      recorder.stop()
+      stream.getTracks().forEach(track => track.stop())
+      status.innerText = "Uploading answer..."
+    }
+
+    function speak(text, callback) {
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.onend = callback
+      synth.speak(utterance)
+    }
+
+    function askNextQuestion() {
+      if (currentIndex >= questions.length) {
+        bot.innerText = "Bot: Interview complete. Thank you."
+        status.innerText = ""
+        return
+      }
+
+      const question = questions[currentIndex]
+      bot.innerText = `Bot: ${question}`
+      status.innerText = "Listening..."
+
+      speak(question, () => {
+        setTimeout(() => {
+          startRecording()
+          status.innerText = "Recording... Speak now."
+        }, 1000)
+      })
+    }
+
+    async function uploadRecording() {
+      const blob = new Blob(chunks, { type: 'audio/webm' })
+      const file = new File([blob], `answer-${currentIndex}.webm`, { type: 'audio/webm' })
+
+      const formData = new FormData()
+      formData.append("audio", file)
+      formData.append("job_question_index", currentIndex)
+
+      await fetch(`/interviews/${interviewId}/answers_by_voice`, {
+        method: "POST",
+        headers: {
+          "X-CSRF-Token": csrfToken
+        },
+        body: formData
+      })
+
+      chunks = []
+      currentIndex++
+      setTimeout(askNextQuestion, 1000)
+    }
+
+    startBtn.onclick = () => {
+      startBtn.disabled = true
+      askNextQuestion()
+    }
+  </script>
+</div>

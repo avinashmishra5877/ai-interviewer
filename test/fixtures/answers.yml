@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  interview: one
+  job_question: one
+  transcript: MyText
+
+two:
+  interview: two
+  job_question: two
+  transcript: MyText

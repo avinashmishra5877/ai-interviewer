@@ -1,0 +1,41 @@
+<% content_for :title, "Interviews" %>
+
+<div class="w-full">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-md inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <div id="interviews" class="min-w-full divide-y divide-gray-200 space-y-5">
+    <h2 class="text-2xl font-bold mb-6">All Interviews</h2>
+
+    <table class="min-w-full bg-white shadow border rounded">
+      <thead>
+        <tr class="bg-gray-100 text-left text-sm">
+          <th class="py-2 px-4">Job</th>
+          <th class="py-2 px-4">Date</th>
+          <th class="py-2 px-4">Evaluation</th>
+          <th class="py-2 px-4">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @interviews.each do |interview| %>
+          <tr class="border-t">
+            <td class="py-2 px-4"><%= interview.job.title %></td>
+            <td class="py-2 px-4"><%= interview.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+            <td class="py-2 px-4">
+              <%= interview.evaluation_summary.present? ? "✅ Done" : "⏳ Pending" %>
+            </td>
+            <td class="py-2 px-4">
+              <% if interview.evaluation_summary.blank? %>
+                <%= button_to "Trigger Evaluation", evaluate_interview_path(interview), method: :post,
+                    class: "bg-orange-600 text-white px-3 py-1 rounded hover:bg-orange-700" %>
+              <% else %>
+                <%= link_to "View Results", interview_path(interview), class: "text-blue-600 hover:underline" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

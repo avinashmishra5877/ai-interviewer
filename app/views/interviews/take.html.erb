@@ -1,0 +1,21 @@
+<% content_for :title, "Showing interview" %>
+
+<div class="md:w-2/3 w-full">
+  <% if notice.present? %>
+    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-md inline-block" id="notice"><%= notice %></p>
+  <% end %>
+
+  <h1 class="text-2xl font-bold mb-6">Answer Interview Questions</h1>
+
+  <%= form_with url: submit_answers_interview_path(@interview), method: :post, local: true do |form| %>
+    <% @interview.answers.includes(:job_question).each_with_index do |answer, index| %>
+      <div class="mb-6 p-4 border rounded bg-white">
+        <h3 class="mb-2 font-semibold">Q<%= index + 1 %>: <%= answer.job_question.content %></h3>
+        <%= hidden_field_tag "answers[][id]", answer.id %>
+        <%= text_area_tag "answers[][transcript]", answer.transcript, rows: 3, class: "w-full p-2 border" %>
+      </div>
+    <% end %>
+
+    <%= submit_tag "Submit and Evaluate", class: "bg-blue-600 text-white px-4 py-2 rounded" %>
+  <% end %>
+</div>
